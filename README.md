@@ -1,5 +1,7 @@
 # persist.nvim
 
+[![CI](https://github.com/dmshvedchenko/persist.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/dmshvedchenko/persist.nvim/actions/workflows/ci.yml)
+
 > A lightweight session persistence plugin for Neovim with interactive scratch buffer recovery.
 
 Unlike the built-in `:mksession`, **persist.nvim** preserves the contents of unnamed (`[No Name]`) buffers and provides an interactive recovery workflow.
