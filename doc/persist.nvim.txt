@@ -1,0 +1,37 @@
+*persist.nvim*
+
+==============================================================================
+INTRODUCTION                                             *persist-introduction*
+
+persist.nvim restores Neovim tabs, window layouts, file buffers, and unnamed
+scratch buffers.
+
+==============================================================================
+SETUP                                                           *persist-setup*
+
+>lua
+require("persist").setup()
+<
+
+==============================================================================
+COMMANDS                                                     *persist-commands*
+
+:PersistSave
+    Save the current session.
+
+:PersistRestore
+    Restore the saved session.
+
+==============================================================================
+STORAGE                                                       *persist-storage*
+
+Session manifest:
+    stdpath("state")/persist/session.json
+
+Scratch buffers:
+    stdpath("state")/persist/scratch/
+
+==============================================================================
+LICENSE
+
+MIT License
