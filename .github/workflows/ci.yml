@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Neovim and StyLua
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Neovim
+        run: |
+          curl -L \
+            https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz \
+            -o /tmp/nvim.tar.gz
+
+          tar -xzf /tmp/nvim.tar.gz -C /tmp
+
+          echo "/tmp/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      - name: Show Neovim version
+        run: nvim --version
+
+      - name: Check plugin loading
+        env:
+          XDG_CONFIG_HOME: /tmp/persist-nvim/config
+          XDG_DATA_HOME: /tmp/persist-nvim/data
+          XDG_STATE_HOME: /tmp/persist-nvim/state
+          XDG_CACHE_HOME: /tmp/persist-nvim/cache
+        run: |
+          nvim --headless \
+            -u NONE \
+            --cmd "set runtimepath+=$GITHUB_WORKSPACE" \
+            -c "lua require('persist')" \
+            -c "qa!"
+
+      - name: Check plugin setup
+        env:
+          XDG_CONFIG_HOME: /tmp/persist-nvim/config
+          XDG_DATA_HOME: /tmp/persist-nvim/data
+          XDG_STATE_HOME: /tmp/persist-nvim/state
+          XDG_CACHE_HOME: /tmp/persist-nvim/cache
+        run: |
+          nvim --headless \
+            -u NONE \
+            --cmd "set runtimepath+=$GITHUB_WORKSPACE" \
+            -c "lua require('persist').setup()" \
+            -c "qa!"
+
+      - name: Install StyLua
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v2.5.1
+          args: false
+
+      - name: Check formatting
+        run: stylua --check lua
