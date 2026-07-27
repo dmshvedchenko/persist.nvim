@@ -22,10 +22,7 @@ local save_blocked = false
 ----------------------------------------------------------------------
 
 local function state_dir()
-  local directory = vim.fs.joinpath(
-    vim.fn.stdpath("state"),
-    "persist"
-  )
+  local directory = vim.fs.joinpath(vim.fn.stdpath("state"), "persist")
 
   vim.fn.mkdir(directory, "p")
 
@@ -33,10 +30,7 @@ local function state_dir()
 end
 
 local function manifest_path()
-  return vim.fs.joinpath(
-    state_dir(),
-    "session.json"
-  )
+  return vim.fs.joinpath(state_dir(), "session.json")
 end
 
 ----------------------------------------------------------------------
@@ -44,10 +38,7 @@ end
 ----------------------------------------------------------------------
 
 local function write_manifest(manifest)
-  local encode_ok, json = pcall(
-    vim.json.encode,
-    manifest
-  )
+  local encode_ok, json = pcall(vim.json.encode, manifest)
 
   if not encode_ok then
     vim.notify(
@@ -74,17 +65,13 @@ local function write_manifest(manifest)
   file:write(json)
   file:close()
 
-  local renamed, rename_error = os.rename(
-    temporary_path,
-    path
-  )
+  local renamed, rename_error = os.rename(temporary_path, path)
 
   if not renamed then
     os.remove(temporary_path)
 
     vim.notify(
-      "persist: failed to replace session.json: "
-        .. tostring(rename_error),
+      "persist: failed to replace session.json: " .. tostring(rename_error),
       vim.log.levels.ERROR
     )
 
@@ -95,18 +82,12 @@ local function write_manifest(manifest)
 end
 
 local function quarantine_manifest(path)
-  local damaged_path = path
-    .. ".corrupt."
-    .. os.time()
+  local damaged_path = path .. ".corrupt." .. os.time()
 
-  os.rename(
-    path,
-    damaged_path
-  )
+  os.rename(path, damaged_path)
 
   vim.notify(
-    "persist: corrupt session.json moved to "
-      .. damaged_path,
+    "persist: corrupt session.json moved to " .. damaged_path,
     vim.log.levels.WARN
   )
 end
@@ -175,10 +156,7 @@ local function convert_layout(node, keep)
   local children = {}
 
   for _, child in ipairs(node[2] or {}) do
-    children[#children + 1] = convert_layout(
-      child,
-      keep
-    )
+    children[#children + 1] = convert_layout(child, keep)
   end
 
   return {
@@ -198,10 +176,7 @@ local function layout_has_persistable_content(node)
     local ref = node[2]
 
     return type(ref) == "table"
-      and (
-        ref.kind == "file"
-        or ref.kind == "scratch"
-      )
+      and (ref.kind == "file" or ref.kind == "scratch")
   end
 
   local children = node[2]
@@ -250,10 +225,7 @@ function M.save()
   for original_index, tabpage in ipairs(all_tabpages) do
     local tab_number = api.nvim_tabpage_get_number(tabpage)
 
-    local layout = convert_layout(
-      vim.fn.winlayout(tab_number),
-      keep
-    )
+    local layout = convert_layout(vim.fn.winlayout(tab_number), keep)
 
     -- Do not save completely empty tabs.
     if layout_has_persistable_content(layout) then
@@ -276,14 +248,9 @@ function M.save()
       current = saved_current_index
     else
       -- If the current tab was empty, select the nearest non-empty tab.
-      local candidate =
-        current_original_index
-        - removed_before_current
+      local candidate = current_original_index - removed_before_current
 
-      current = math.min(
-        math.max(candidate, 1),
-        #tabs
-      )
+      current = math.min(math.max(candidate, 1), #tabs)
     end
   end
 
@@ -311,32 +278,20 @@ local function open_leaf(ref)
     return
   end
 
-  if ref.kind == "file"
-    and type(ref.path) == "string"
-  then
+  if ref.kind == "file" and type(ref.path) == "string" then
     local buf = vim.fn.bufadd(ref.path)
 
     vim.bo[buf].buflisted = true
 
-    pcall(
-      api.nvim_win_set_buf,
-      0,
-      buf
-    )
+    pcall(api.nvim_win_set_buf, 0, buf)
 
     return
   end
 
-  if ref.kind == "scratch"
-    and type(ref.id) == "string"
-  then
+  if ref.kind == "scratch" and type(ref.id) == "string" then
     local buf = scratch.load(ref.id)
 
-    pcall(
-      api.nvim_win_set_buf,
-      0,
-      buf
-    )
+    pcall(api.nvim_win_set_buf, 0, buf)
   end
 end
 
@@ -352,9 +307,7 @@ local function apply_layout(node)
 
   local children = node[2]
 
-  if type(children) ~= "table"
-    or #children == 0
-  then
+  if type(children) ~= "table" or #children == 0 then
     return
   end
 
@@ -369,8 +322,7 @@ local function apply_layout(node)
       vim.cmd("rightbelow split")
     end
 
-    windows[#windows + 1] =
-      api.nvim_get_current_win()
+    windows[#windows + 1] = api.nvim_get_current_win()
   end
 
   for index, child in ipairs(children) do
@@ -385,10 +337,10 @@ end
 
 local function drop_empty_leftover_buffers()
   for _, buf in ipairs(api.nvim_list_bufs()) do
-    local has_windows =
-      #vim.fn.win_findbuf(buf) > 0
+    local has_windows = #vim.fn.win_findbuf(buf) > 0
 
-    if api.nvim_buf_is_valid(buf)
+    if
+      api.nvim_buf_is_valid(buf)
       and vim.bo[buf].buflisted
       and vim.bo[buf].buftype == ""
       and api.nvim_buf_get_name(buf) == ""
@@ -396,13 +348,9 @@ local function drop_empty_leftover_buffers()
       and vim.b[buf].persist_id == nil
       and not has_windows
     then
-      pcall(
-        api.nvim_buf_delete,
-        buf,
-        {
-          force = true,
-        }
-      )
+      pcall(api.nvim_buf_delete, buf, {
+        force = true,
+      })
     end
   end
 end
@@ -422,33 +370,22 @@ local function restore_manifest(manifest)
     end
 
     if type(tab) == "table" then
-      local restore_ok, restore_error = pcall(
-        apply_layout,
-        tab.layout
-      )
+      local restore_ok, restore_error = pcall(apply_layout, tab.layout)
 
       if not restore_ok then
         vim.notify(
-          "persist: failed to restore layout: "
-            .. tostring(restore_error),
+          "persist: failed to restore layout: " .. tostring(restore_error),
           vim.log.levels.WARN
         )
       end
     end
   end
 
-  local current =
-    tonumber(manifest.current) or 1
+  local current = tonumber(manifest.current) or 1
 
-  current = math.min(
-    math.max(current, 1),
-    #tabs
-  )
+  current = math.min(math.max(current, 1), #tabs)
 
-  pcall(
-    vim.cmd,
-    current .. "tabnext"
-  )
+  pcall(vim.cmd, current .. "tabnext")
 
   drop_empty_leftover_buffers()
 end
@@ -457,11 +394,7 @@ end
 -- Scratch discovery
 ----------------------------------------------------------------------
 
-local function collect_scratch_ids_from_layout(
-  node,
-  result,
-  seen
-)
+local function collect_scratch_ids_from_layout(node, result, seen)
   if type(node) ~= "table" then
     return
   end
@@ -469,7 +402,8 @@ local function collect_scratch_ids_from_layout(
   if node[1] == "leaf" then
     local ref = node[2]
 
-    if type(ref) == "table"
+    if
+      type(ref) == "table"
       and ref.kind == "scratch"
       and type(ref.id) == "string"
       and not seen[ref.id]
@@ -482,11 +416,7 @@ local function collect_scratch_ids_from_layout(
   end
 
   for _, child in ipairs(node[2] or {}) do
-    collect_scratch_ids_from_layout(
-      child,
-      result,
-      seen
-    )
+    collect_scratch_ids_from_layout(child, result, seen)
   end
 end
 
@@ -494,17 +424,11 @@ local function collect_scratches(manifest)
   local result = {}
   local seen = {}
 
-  for tab_index, tab in ipairs(
-    manifest.tabs or {}
-  ) do
+  for tab_index, tab in ipairs(manifest.tabs or {}) do
     if type(tab) == "table" then
       local ids = {}
 
-      collect_scratch_ids_from_layout(
-        tab.layout,
-        ids,
-        seen
-      )
+      collect_scratch_ids_from_layout(tab.layout, ids, seen)
 
       for _, id in ipairs(ids) do
         result[#result + 1] = {
@@ -524,11 +448,7 @@ local function collect_all_scratch_ids_from_tab(tab)
   local seen = {}
 
   if type(tab) == "table" then
-    collect_scratch_ids_from_layout(
-      tab.layout,
-      result,
-      seen
-    )
+    collect_scratch_ids_from_layout(tab.layout, result, seen)
   end
 
   return result
@@ -542,8 +462,7 @@ end
 -- when they contain neither a file nor a scratch note.
 local function remove_empty_tabs_from_manifest(manifest)
   local old_tabs = manifest.tabs or {}
-  local old_current =
-    tonumber(manifest.current) or 1
+  local old_current = tonumber(manifest.current) or 1
 
   local new_tabs = {}
 
@@ -552,23 +471,18 @@ local function remove_empty_tabs_from_manifest(manifest)
   local surviving_current = nil
 
   for old_index, tab in ipairs(old_tabs) do
-    local keep_tab =
-      type(tab) == "table"
-      and layout_has_persistable_content(
-        tab.layout
-      )
+    local keep_tab = type(tab) == "table"
+      and layout_has_persistable_content(tab.layout)
 
     if keep_tab then
-      new_tabs[#new_tabs + 1] =
-        vim.deepcopy(tab)
+      new_tabs[#new_tabs + 1] = vim.deepcopy(tab)
 
       if old_index == old_current then
         current_survived = true
         surviving_current = #new_tabs
       end
     elseif old_index < old_current then
-      removed_before_current =
-        removed_before_current + 1
+      removed_before_current = removed_before_current + 1
     end
   end
 
@@ -584,26 +498,18 @@ local function remove_empty_tabs_from_manifest(manifest)
     return
   end
 
-  local candidate =
-    old_current - removed_before_current
+  local candidate = old_current - removed_before_current
 
-  manifest.current = math.min(
-    math.max(candidate, 1),
-    #new_tabs
-  )
+  manifest.current = math.min(math.max(candidate, 1), #new_tabs)
 end
 
 ----------------------------------------------------------------------
 -- Delete complete tabs
 ----------------------------------------------------------------------
 
-local function remove_discarded_tabs(
-  manifest,
-  discarded_tab_indexes
-)
+local function remove_discarded_tabs(manifest, discarded_tab_indexes)
   local old_tabs = manifest.tabs or {}
-  local old_current =
-    tonumber(manifest.current) or 1
+  local old_current = tonumber(manifest.current) or 1
 
   local new_tabs = {}
 
@@ -613,14 +519,12 @@ local function remove_discarded_tabs(
   for old_index, tab in ipairs(old_tabs) do
     if discarded_tab_indexes[old_index] then
       if old_index < old_current then
-        removed_before_current =
-          removed_before_current + 1
+        removed_before_current = removed_before_current + 1
       elseif old_index == old_current then
         current_tab_removed = true
       end
     else
-      new_tabs[#new_tabs + 1] =
-        vim.deepcopy(tab)
+      new_tabs[#new_tabs + 1] = vim.deepcopy(tab)
     end
   end
 
@@ -634,42 +538,24 @@ local function remove_discarded_tabs(
   end
 
   if current_tab_removed then
-    local candidate =
-      old_current - removed_before_current
+    local candidate = old_current - removed_before_current
 
-    manifest.current = math.min(
-      math.max(candidate, 1),
-      #new_tabs
-    )
+    manifest.current = math.min(math.max(candidate, 1), #new_tabs)
 
     return
   end
 
-  manifest.current = math.min(
-    math.max(
-      old_current - removed_before_current,
-      1
-    ),
-    #new_tabs
-  )
+  manifest.current =
+    math.min(math.max(old_current - removed_before_current, 1), #new_tabs)
 end
 
-local function delete_scratch_files_from_tabs(
-  manifest,
-  discarded_tab_indexes
-)
+local function delete_scratch_files_from_tabs(manifest, discarded_tab_indexes)
   local deleted_ids = {}
 
-  for tab_index in pairs(
-    discarded_tab_indexes
-  ) do
-    local tab =
-      manifest.tabs
-      and manifest.tabs[tab_index]
+  for tab_index in pairs(discarded_tab_indexes) do
+    local tab = manifest.tabs and manifest.tabs[tab_index]
 
-    for _, id in ipairs(
-      collect_all_scratch_ids_from_tab(tab)
-    ) do
+    for _, id in ipairs(collect_all_scratch_ids_from_tab(tab)) do
       if not deleted_ids[id] then
         deleted_ids[id] = true
         scratch.delete(id)
@@ -687,34 +573,18 @@ local function close_scratch_preview(preview)
     return
   end
 
-  if preview.win
-    and api.nvim_win_is_valid(preview.win)
-  then
-    pcall(
-      api.nvim_win_close,
-      preview.win,
-      true
-    )
+  if preview.win and api.nvim_win_is_valid(preview.win) then
+    pcall(api.nvim_win_close, preview.win, true)
   end
 
-  if preview.buf
-    and api.nvim_buf_is_valid(preview.buf)
-  then
-    pcall(
-      api.nvim_buf_delete,
-      preview.buf,
-      {
-        force = true,
-      }
-    )
+  if preview.buf and api.nvim_buf_is_valid(preview.buf) then
+    pcall(api.nvim_buf_delete, preview.buf, {
+      force = true,
+    })
   end
 end
 
-local function open_scratch_preview(
-  item,
-  index,
-  total
-)
+local function open_scratch_preview(item, index, total)
   local lines = scratch.read(item.id)
 
   if not lines then
@@ -736,51 +606,22 @@ local function open_scratch_preview(
   local editor_height = vim.o.lines
 
   local width = math.min(
-    math.max(
-      60,
-      math.floor(editor_width * 0.72)
-    ),
-    math.max(
-      20,
-      editor_width - 4
-    )
+    math.max(60, math.floor(editor_width * 0.72)),
+    math.max(20, editor_width - 4)
   )
 
   local height = math.min(
-    math.max(
-      12,
-      math.floor(editor_height * 0.62)
-    ),
-    math.max(
-      6,
-      editor_height - 6
-    )
+    math.max(12, math.floor(editor_height * 0.62)),
+    math.max(6, editor_height - 6)
   )
 
-  local row = math.max(
-    0,
-    math.floor(
-      (editor_height - height) / 2
-    ) - 1
-  )
+  local row = math.max(0, math.floor((editor_height - height) / 2) - 1)
 
-  local col = math.max(
-    0,
-    math.floor(
-      (editor_width - width) / 2
-    )
-  )
+  local col = math.max(0, math.floor((editor_width - width) / 2))
 
-  local buf =
-    api.nvim_create_buf(false, true)
+  local buf = api.nvim_create_buf(false, true)
 
-  api.nvim_buf_set_lines(
-    buf,
-    0,
-    -1,
-    false,
-    lines
-  )
+  api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
   vim.bo[buf].buftype = "nofile"
   vim.bo[buf].bufhidden = "wipe"
@@ -788,29 +629,25 @@ local function open_scratch_preview(
   vim.bo[buf].modifiable = false
   vim.bo[buf].filetype = "text"
 
-  local win = api.nvim_open_win(
-    buf,
-    false,
-    {
-      relative = "editor",
-      row = row,
-      col = col,
-      width = width,
-      height = height,
-      style = "minimal",
-      border = "rounded",
+  local win = api.nvim_open_win(buf, false, {
+    relative = "editor",
+    row = row,
+    col = col,
+    width = width,
+    height = height,
+    style = "minimal",
+    border = "rounded",
 
-      title = string.format(
-        " Note %d of %d — tab %d ",
-        index,
-        total,
-        item.tab_index
-      ),
+    title = string.format(
+      " Note %d of %d — tab %d ",
+      index,
+      total,
+      item.tab_index
+    ),
 
-      title_pos = "center",
-      zindex = 40,
-    }
-  )
+    title_pos = "center",
+    zindex = 40,
+  })
 
   vim.wo[win].wrap = true
   vim.wo[win].linebreak = true
@@ -830,12 +667,7 @@ end
 -- Review
 ----------------------------------------------------------------------
 
-local function review_scratches(
-  items,
-  index,
-  discarded_tab_indexes,
-  callback
-)
+local function review_scratches(items, index, discarded_tab_indexes, callback)
   if index > #items then
     callback(discarded_tab_indexes)
     return
@@ -846,21 +678,12 @@ local function review_scratches(
   -- If a previous note already caused this tab to be discarded,
   -- skip all remaining notes from the same tab.
   if discarded_tab_indexes[item.tab_index] then
-    review_scratches(
-      items,
-      index + 1,
-      discarded_tab_indexes,
-      callback
-    )
+    review_scratches(items, index + 1, discarded_tab_indexes, callback)
 
     return
   end
 
-  local preview = open_scratch_preview(
-    item,
-    index,
-    #items
-  )
+  local preview = open_scratch_preview(item, index, #items)
 
   local choices = {
     {
@@ -878,46 +701,33 @@ local function review_scratches(
   }
 
   vim.schedule(function()
-    vim.ui.select(
-      choices,
-      {
-        prompt = string.format(
-          "Note %d of %d, tab %d",
-          index,
-          #items,
-          item.tab_index
-        ),
+    vim.ui.select(choices, {
+      prompt = string.format(
+        "Note %d of %d, tab %d",
+        index,
+        #items,
+        item.tab_index
+      ),
 
-        format_item = function(choice)
-          return choice.label
-        end,
-      },
-      function(choice)
-        close_scratch_preview(preview)
+      format_item = function(choice)
+        return choice.label
+      end,
+    }, function(choice)
+      close_scratch_preview(preview)
 
-        if not choice
-          or choice.action == "abort"
-        then
-          callback(nil)
-          return
-        end
-
-        if choice.action == "discard_tab" then
-          discarded_tab_indexes[
-            item.tab_index
-          ] = true
-        end
-
-        vim.schedule(function()
-          review_scratches(
-            items,
-            index + 1,
-            discarded_tab_indexes,
-            callback
-          )
-        end)
+      if not choice or choice.action == "abort" then
+        callback(nil)
+        return
       end
-    )
+
+      if choice.action == "discard_tab" then
+        discarded_tab_indexes[item.tab_index] = true
+      end
+
+      vim.schedule(function()
+        review_scratches(items, index + 1, discarded_tab_indexes, callback)
+      end)
+    end)
   end)
 end
 
@@ -932,22 +742,13 @@ local function finish_restore(manifest)
   restore_manifest(manifest)
 end
 
-local function discard_tabs_and_restore(
-  manifest,
-  discarded_tab_indexes
-)
+local function discard_tabs_and_restore(manifest, discarded_tab_indexes)
   -- Delete scratch files first, while the old tab indexes
   -- still match the original manifest.
-  delete_scratch_files_from_tabs(
-    manifest,
-    discarded_tab_indexes
-  )
+  delete_scratch_files_from_tabs(manifest, discarded_tab_indexes)
 
   -- Then remove the selected tabs entirely from the manifest.
-  remove_discarded_tabs(
-    manifest,
-    discarded_tab_indexes
-  )
+  remove_discarded_tabs(manifest, discarded_tab_indexes)
 
   write_manifest(manifest)
   finish_restore(manifest)
@@ -980,12 +781,10 @@ function M.restore()
   local raw = file:read("*a")
   file:close()
 
-  local decode_ok, manifest = pcall(
-    vim.json.decode,
-    raw
-  )
+  local decode_ok, manifest = pcall(vim.json.decode, raw)
 
-  if not decode_ok
+  if
+    not decode_ok
     or type(manifest) ~= "table"
     or type(manifest.tabs) ~= "table"
   then
@@ -1037,27 +836,50 @@ function M.restore()
     },
   }
 
-  vim.ui.select(
-    choices,
-    {
-      prompt = string.format(
-        "Unsaved notes found: %d",
-        #items
-      ),
+  vim.ui.select(choices, {
+    prompt = string.format("Unsaved notes found: %d", #items),
 
-      format_item = function(choice)
-        return choice.label
-      end,
-    },
-    function(choice)
-      if not choice
-        or choice.action == "later"
-      then
+    format_item = function(choice)
+      return choice.label
+    end,
+  }, function(choice)
+    if not choice or choice.action == "later" then
+      save_blocked = true
+      restored = false
+
+      vim.notify(
+        "persist: restoration postponed; "
+          .. "automatic saving is disabled for this session",
+        vim.log.levels.INFO
+      )
+
+      return
+    end
+
+    if choice.action == "restore_all" then
+      finish_restore(manifest)
+      return
+    end
+
+    if choice.action == "discard_all_tabs" then
+      local discarded_tab_indexes = {}
+
+      for _, item in ipairs(items) do
+        discarded_tab_indexes[item.tab_index] = true
+      end
+
+      discard_tabs_and_restore(manifest, discarded_tab_indexes)
+
+      return
+    end
+
+    review_scratches(items, 1, {}, function(discarded_tab_indexes)
+      if not discarded_tab_indexes then
         save_blocked = true
         restored = false
 
         vim.notify(
-          "persist: restoration postponed; "
+          "persist: restoration stopped; "
             .. "automatic saving is disabled for this session",
           vim.log.levels.INFO
         )
@@ -1065,54 +887,9 @@ function M.restore()
         return
       end
 
-      if choice.action == "restore_all" then
-        finish_restore(manifest)
-        return
-      end
-
-      if choice.action == "discard_all_tabs" then
-        local discarded_tab_indexes = {}
-
-        for _, item in ipairs(items) do
-          discarded_tab_indexes[
-            item.tab_index
-          ] = true
-        end
-
-        discard_tabs_and_restore(
-          manifest,
-          discarded_tab_indexes
-        )
-
-        return
-      end
-
-      review_scratches(
-        items,
-        1,
-        {},
-        function(discarded_tab_indexes)
-          if not discarded_tab_indexes then
-            save_blocked = true
-            restored = false
-
-            vim.notify(
-              "persist: restoration stopped; "
-                .. "automatic saving is disabled for this session",
-              vim.log.levels.INFO
-            )
-
-            return
-          end
-
-          discard_tabs_and_restore(
-            manifest,
-            discarded_tab_indexes
-          )
-        end
-      )
-    end
-  )
+      discard_tabs_and_restore(manifest, discarded_tab_indexes)
+    end)
+  end)
 end
 
 return M
