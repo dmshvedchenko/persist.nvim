@@ -1,6 +1,11 @@
 # persist.nvim
 
 [![CI](https://github.com/dmshvedchenko/persist.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/dmshvedchenko/persist.nvim/actions/workflows/ci.yml)
+![Neovim](https://img.shields.io/badge/Neovim-0.11+-57A143?logo=neovim)
+
+![License](https://img.shields.io/github/license/dmshvedchenko/persist.nvim)
+
+![Latest Release](https://img.shields.io/github/v/release/dmshvedchenko/persist.nvim)
 
 > A lightweight session persistence plugin for Neovim with interactive scratch buffer recovery.
 
