@@ -23,7 +23,16 @@ This means you can safely close Neovim without losing temporary notes, drafts, o
 
 ## 📸 Preview
 
-> **GIF coming soon**
+<p align="center">
+  <img
+    src="assets/demo.gif"
+    alt="persist.nvim demo"
+  />
+</p>
+
+<p align="center">
+  Review, restore, or permanently discard unsaved scratch buffers.
+</p>
 
 ---
 
